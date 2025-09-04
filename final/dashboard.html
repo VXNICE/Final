@@ -226,6 +226,43 @@
     </div>
   </div>
 
+  <!-- payment modal -->
+  <div id="paymentModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md rounded-xl shadow-lg overflow-hidden">
+      <div class="px-5 py-3 border-b flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Upload Payment</h3>
+        <button id="paymentClose" class="text-gray-500 hover:text-gray-700">✖</button>
+      </div>
+      <form id="paymentForm" class="p-5 space-y-4">
+        <input type="hidden" id="paymentBookingId" name="booking_id">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Method</label>
+          <select id="paymentMethod" name="method" class="w-full border rounded-lg px-3 py-2">
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="gcash">GCash</option>
+            <option value="paymaya">PayMaya</option>
+            <option value="cod">COD</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Reference</label>
+          <input id="paymentReference" name="reference" class="w-full border rounded-lg px-3 py-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Receipt</label>
+          <input id="paymentReceipt" name="receipt" type="file" accept=".jpg,.jpeg,.png,.pdf" class="w-full" />
+        </div>
+        <p id="paymentError" class="text-sm text-red-600 hidden"></p>
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" id="paymentCancel" class="px-4 py-2 rounded-lg border hover:bg-gray-50">Cancel</button>
+          <button id="paymentSubmit" class="px-4 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  </div>
+
   <script src="assets/js/dashboard.js" defer></script>
 </body>
 </html>

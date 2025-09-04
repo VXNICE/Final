@@ -62,6 +62,15 @@
     const bookingGuests = document.getElementById('bookingGuests');
     const bookingError = document.getElementById('bookingError');
 
+    // Payment modal refs
+    const paymentModal = document.getElementById('paymentModal');
+    const paymentForm = document.getElementById('paymentForm');
+    const paymentClose = document.getElementById('paymentClose');
+    const paymentCancel = document.getElementById('paymentCancel');
+    const paymentBookingId = document.getElementById('paymentBookingId');
+    const paymentError = document.getElementById('paymentError');
+    const paymentSubmit = document.getElementById('paymentSubmit');
+
     // state
     let allRooms = [];
     let canManage = false;
@@ -205,7 +214,7 @@
                 ${canManage ? `
                   <button data-edit="${id}" class="px-3 py-2 rounded border text-sm hover:bg-gray-50">Edit</button>
                   <button data-del="${id}" class="px-3 py-2 rounded border text-sm hover:bg-red-50">Delete</button>
-                ` : `<span class="col-span-1"></span>`}
+                ` : `<button data-book="${id}" class="px-3 py-2 rounded bg-green-600 text-white text-sm hover:bg-green-700">Book Now</button>`}
               </div>
             </div>
           </div>
@@ -214,6 +223,7 @@
 
       // attach handlers
       grid.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => openView(btn.dataset.view)));
+      grid.querySelectorAll('[data-book]').forEach(btn => btn.addEventListener('click', () => openBooking(btn.dataset.book)));
       if (canManage) {
         grid.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => openEdit(btn.dataset.edit)));
         grid.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', () => doDelete(btn.dataset.del)));
@@ -311,6 +321,40 @@
     bookingCancel?.addEventListener('click', closeBooking);
     bookingModal?.addEventListener('click', (e)=>{ if(e.target===bookingModal) closeBooking(); });
 
+    // payment modal handlers
+    function openPaymentModal(id){
+      if(!paymentBookingId) return;
+      paymentBookingId.value = id;
+      paymentForm?.reset();
+      paymentError?.classList.add('hidden');
+      paymentModal?.classList.remove('hidden'); paymentModal?.classList.add('flex');
+    }
+    window.openPaymentModal = openPaymentModal;
+    function closePayment(){ paymentModal?.classList.add('hidden'); paymentModal?.classList.remove('flex'); }
+    paymentClose?.addEventListener('click', closePayment);
+    paymentCancel?.addEventListener('click', closePayment);
+    paymentModal?.addEventListener('click', e=>{ if(e.target===paymentModal) closePayment(); });
+
+    paymentForm?.addEventListener('submit', async e=>{
+      e.preventDefault();
+      paymentSubmit.disabled = true;
+      paymentError?.classList.add('hidden');
+      try{
+        const fd = new FormData(paymentForm);
+        const res = await fetch('api/booking_payment_upload.php',{method:'POST',body:fd,credentials:'include'});
+        const txt = await res.text();
+        let data; try{ data = JSON.parse(txt); } catch{ data={success:false,message:txt}; }
+        if(!data.success){ throw new Error(data.message || 'Upload failed'); }
+        closePayment();
+        alert('Payment proof uploaded. Awaiting approval.');
+      } catch(err){
+        console.error('payment upload',err);
+        paymentError && (paymentError.textContent = err.message || err, paymentError.classList.remove('hidden'));
+      } finally {
+        paymentSubmit.disabled = false;
+      }
+    });
+
     // ensure viewBookBtn has click handler (extra safety)
     (function attachViewBookNow(){
       const attempt = () => {
@@ -351,14 +395,16 @@
         fd.append('extras', JSON.stringify(extras));
         fd.append('notes', notes);
 
-        const res = await fetch('api/book_room.php', { method:'POST', credentials:'include', body:fd });
-        const data = await res.json();
+        const res = await fetch('api/bookings_create.php', { method:'POST', credentials:'include', body:fd });
+        const textRes = await res.text();
+        let data;
+        try { data = JSON.parse(textRes); } catch { data = { success:false, message:textRes }; }
         if(!data.success) {
           bookingError && (bookingError.textContent = data.message || 'Booking failed', bookingError.classList.remove('hidden'));
           return;
         }
         closeBooking();
-        alert('Booking request created — host will review it shortly.');
+        openPaymentModal(data.booking_id);
         await loadRooms();
       } catch(err){
         console.error('Booking error', err);
