@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Receipt - StayFind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+  <header class="bg-blue-700 text-white py-4">
+    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold">StayFind</h1>
+      <a href="booking_history.html" class="text-white hover:underline">My Bookings</a>
+    </div>
+  </header>
+
+  <main class="max-w-xl mx-auto px-4 py-8 bg-white mt-6 rounded shadow">
+    <h2 class="text-2xl font-semibold mb-4">Upload Payment Receipt</h2>
+
+    <form id="receiptForm" enctype="multipart/form-data" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium">Booking ID</label>
+        <input type="text" name="booking_id" required class="mt-1 block w-full border rounded px-3 py-2">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Upload Receipt Image</label>
+        <input type="file" name="receipt" accept="image/*" required class="mt-1 block w-full border rounded px-3 py-2">
+      </div>
+
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Submit Receipt</button>
+    </form>
+
+    <p id="msg" class="text-center mt-4 text-sm"></p>
+  </main>
+
+  <script>
+    const form = document.getElementById('receiptForm');
+    const msg = document.getElementById('msg');
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+
+      const res = await fetch('api/upload_receipt.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await res.json();
+      msg.textContent = result.message;
+      msg.className = result.success ? 'text-green-600' : 'text-red-500';
+
+      if (result.success) {
+        form.reset();
+      }
+    });
+  </script>
+</body>
+</html>

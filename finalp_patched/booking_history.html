@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Booking History - StayFind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <header class="bg-blue-700 text-white py-4">
+    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold">StayFind</h1>
+      <a href="upload_receipt.html" class="text-white hover:underline">Upload Receipt</a>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <h2 class="text-2xl font-semibold mb-4">My Booking History</h2>
+
+    <div id="bookingList" class="space-y-4">
+      <!-- Bookings will load here -->
+    </div>
+  </main>
+
+  <script>
+    const bookingList = document.getElementById('bookingList');
+    const user_id = 1; // 👈 Replace with dynamic logged-in guest ID in a real app
+
+    async function loadBookings() {
+      const res = await fetch(`api/get_booking_history.php?user_id=${user_id}`);
+      const data = await res.json();
+
+      if (data.success && data.bookings.length > 0) {
+        data.bookings.forEach(b => {
+          const card = document.createElement('div');
+          card.className = 'bg-white p-4 rounded shadow';
+
+          card.innerHTML = `
+            <h3 class="font-bold text-lg">Booking #${b.id}</h3>
+            <p>Room: ${b.room_name}</p>
+            <p>Date: ${b.date}</p>
+            <p>Status: <span class="${b.status === 'Approved' ? 'text-green-600' : 'text-yellow-600'}">${b.status}</span></p>
+            <p>Receipt: ${b.receipt ? `<a href="uploads/${b.receipt}" target="_blank" class="text-blue-600 underline">View</a>` : 'Not uploaded'}</p>
+          `;
+
+          bookingList.appendChild(card);
+        });
+      } else {
+        bookingList.innerHTML = '<p>No bookings found.</p>';
+      }
+    }
+
+    loadBookings();
+  </script>
+</body>
+</html>

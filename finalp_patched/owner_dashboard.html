@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Owner Dashboard - StayFind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <div class="p-6 text-xl font-bold border-b border-gray-200">StayFind Owner</div>
+    <nav class="flex-grow px-4 py-6 space-y-2">
+      <a href="my_rooms.html" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white">My Rooms</a>
+      <a href="add_room.html" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white">Add Room</a>
+      <a href="register_employee.html" class="block px-4 py-2 rounded hover:bg-blue-600 hover:text-white">Register Employee</a>
+      <a href="logout.php" class="block px-4 py-2 rounded hover:bg-red-600 hover:text-white mt-auto">Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 p-8 overflow-auto">
+    <h1 class="text-3xl font-semibold mb-6">Welcome, Owner!</h1>
+    <p class="mb-4">Use the sidebar to manage your rooms, bookings, and employees.</p>
+
+    <!-- Example section: Room summary -->
+    <section class="bg-white p-6 rounded shadow">
+      <h2 class="text-xl font-semibold mb-4">Your Rooms</h2>
+      <div id="roomList" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Rooms will be dynamically loaded here -->
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Fetch rooms owned by this owner and display them
+    async function loadRooms() {
+      try {
+        const ownerId = 1; // TODO: replace with dynamic owner_id from session/auth
+        const res = await fetch(`api/get_owner_rooms.php?owner_id=${ownerId}`);
+        const data = await res.json();
+
+        if(data.success) {
+          const container = document.getElementById('roomList');
+          container.innerHTML = '';
+
+          data.rooms.forEach(room => {
+            const roomCard = document.createElement('div');
+            roomCard.className = 'border rounded p-4 shadow hover:shadow-lg transition';
+
+            roomCard.innerHTML = `
+              <img src="uploads/${room.image}" alt="${room.title}" class="w-full h-40 object-cover rounded mb-3" />
+              <h3 class="text-lg font-semibold">${room.title}</h3>
+              <p class="text-gray-600">${room.location}</p>
+              <p class="mt-2 font-bold">₱${room.price}</p>
+            `;
+
+            container.appendChild(roomCard);
+          });
+
+        } else {
+          alert('Failed to load rooms: ' + data.message);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error loading rooms.');
+      }
+    }
+
+    loadRooms();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>My Rooms - StayFind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <header class="bg-blue-700 text-white py-4">
+    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold">StayFind</h1>
+      <a href="dashboard_owner.html" class="hover:underline">Back to Dashboard</a>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold mb-4">My Rooms</h2>
+    <div id="roomList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+  </main>
+
+  <script>
+    const ownerId = 1; // Replace with real session owner_id
+
+    fetch(`api/get_owner_rooms.php?owner_id=${ownerId}`)
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById('roomList');
+        if (data.success && data.rooms.length > 0) {
+          data.rooms.forEach(room => {
+            container.innerHTML += `
+              <div class="bg-white shadow rounded p-4">
+                <img src="uploads/${room.image}" alt="${room.title}" class="w-full h-40 object-cover rounded mb-2" />
+                <h3 class="text-lg font-semibold">${room.title}</h3>
+                <p class="text-sm text-gray-600">${room.location}</p>
+                <p class="text-sm text-gray-600">₱${room.price} / night</p>
+              </div>
+            `;
+          });
+        } else {
+          container.innerHTML = '<p class="text-gray-600">No rooms found.</p>';
+        }
+      })
+      .catch(err => {
+        console.error('Error:', err);
+        document.getElementById('roomList').innerHTML = '<p class="text-red-500">Failed to load rooms.</p>';
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Room Details - StayFind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <header class="bg-blue-700 text-white py-4">
+    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold">StayFind</h1>
+      <a href="rooms.html" class="text-white hover:underline">← Back to Rooms</a>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <div id="roomDetails" class="bg-white p-6 rounded shadow">
+      <!-- Room details load here -->
+    </div>
+
+    <div class="mt-6 text-right">
+      <button id="bookBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">Book Now</button>
+    </div>
+  </main>
+
+  <script>
+    const roomDetails = document.getElementById('roomDetails');
+    const room_id = new URLSearchParams(window.location.search).get('id');
+    const user_id = 1; // Replace with session user later
+
+    async function loadRoom() {
+      const res = await fetch(`api/get_room_details.php?id=${room_id}`);
+      const data = await res.json();
+
+      if (data.success) {
+        const r = data.room;
+
+        roomDetails.innerHTML = `
+          <h2 class="text-2xl font-bold mb-2">${r.name}</h2>
+          <p class="text-gray-700 mb-2">${r.description}</p>
+          <p><strong>Location:</strong> ${r.location}</p>
+          <p><strong>Price:</strong> ₱${r.price}</p>
+          <div class="mt-4">
+            ${r.images.map(img => `<img src="uploads/${img}" class="inline-block w-48 h-32 object-cover mr-2 mb-2 rounded">`).join('')}
+          </div>
+        `;
+      } else {
+        roomDetails.innerHTML = '<p>Room not found.</p>';
+      }
+    }
+
+    document.getElementById('bookBtn').addEventListener('click', async () => {
+      const res = await fetch('api/book_room.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room_id, user_id })
+      });
+      const result = await res.json();
+
+      alert(result.message);
+      if (result.success) window.location.href = 'booking_history.html';
+    });
+
+    loadRoom();
+  </script>
+</body>
+</html>

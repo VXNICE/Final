@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Rooms - StayFind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <header class="bg-blue-700 text-white py-4">
+    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold">StayFind</h1>
+      <a href="dashboard_owner.html" class="text-white hover:underline">Back to Dashboard</a>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">My Listed Rooms</h2>
+
+    <div id="roomsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </main>
+
+  <script>
+    const ownerId = 1; // Replace with session or dynamic ID if available
+
+    async function fetchRooms() {
+      const response = await fetch(`api/get_rooms.php?owner_id=${ownerId}`);
+      const data = await response.json();
+
+      const container = document.getElementById('roomsContainer');
+      container.innerHTML = '';
+
+      if (data.success && data.rooms.length > 0) {
+        data.rooms.forEach(room => {
+          const card = document.createElement('div');
+          card.className = "bg-white rounded shadow p-4";
+
+          card.innerHTML = `
+            <img src="uploads/${room.image}" alt="${room.title}" class="w-full h-48 object-cover rounded mb-4">
+            <h3 class="text-xl font-bold text-gray-800">${room.title}</h3>
+            <p class="text-sm text-gray-500">${room.type} — ${room.location}</p>
+            <p class="text-sm text-gray-700 mt-1">₱${room.price} / night</p>
+            <p class="text-gray-600 text-sm mt-2">${room.description}</p>
+          `;
+
+          container.appendChild(card);
+        });
+      } else {
+        container.innerHTML = `<p class="text-gray-600">No rooms found.</p>`;
+      }
+    }
+
+    fetchRooms();
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bookings - StayFind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <header class="bg-blue-700 text-white py-4">
+    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold">StayFind</h1>
+      <a href="dashboard_owner.html" class="text-white hover:underline">Back to Dashboard</a>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Booking Requests</h2>
+    <div id="bookingsContainer" class="space-y-6"></div>
+  </main>
+
+  <script>
+    const ownerId = 1; // Replace this with dynamic ID from session
+
+    async function fetchBookings() {
+      const res = await fetch(`api/get_bookings_owner.php?owner_id=${ownerId}`);
+      const data = await res.json();
+
+      const container = document.getElementById('bookingsContainer');
+      container.innerHTML = '';
+
+      if (data.success && data.bookings.length > 0) {
+        data.bookings.forEach(booking => {
+          const card = document.createElement('div');
+          card.className = "bg-white p-4 shadow rounded";
+
+          card.innerHTML = `
+            <h3 class="text-lg font-semibold">${booking.room_title}</h3>
+            <p class="text-sm text-gray-600">Guest: ${booking.guest_name}</p>
+            <p class="text-sm text-gray-600">Check-in: ${booking.check_in}</p>
+            <p class="text-sm text-gray-600">Check-out: ${booking.check_out}</p>
+            <p class="text-sm text-gray-600">Status: <span class="font-medium">${booking.status}</span></p>
+            <div class="mt-2">
+              <p class="text-sm text-gray-600 mb-1">Payment Receipt:</p>
+              <img src="uploads/${booking.receipt}" alt="Receipt" class="w-48 h-auto border rounded">
+            </div>
+            ${booking.status === 'pending' ? `
+              <div class="mt-4 flex gap-3">
+                <button onclick="updateStatus(${booking.booking_id}, 'approved')" class="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600">Approve</button>
+                <button onclick="updateStatus(${booking.booking_id}, 'rejected')" class="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600">Reject</button>
+              </div>
+            ` : ''}
+          `;
+
+          container.appendChild(card);
+        });
+      } else {
+        container.innerHTML = `<p class="text-gray-600">No bookings found.</p>`;
+      }
+    }
+
+    async function updateStatus(bookingId, status) {
+      const res = await fetch('api/approve_booking.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId, status })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert(`Booking ${status}`);
+        fetchBookings();
+      } else {
+        alert('Error updating status');
+      }
+    }
+
+    fetchBookings();
+  </script>
+</body>
+</html>

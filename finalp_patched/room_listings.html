@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Available Rooms - StayFind</title>
+</head>
+<body class="bg-gray-100">
+
+  <header class="bg-blue-700 text-white py-4">
+    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold">StayFind</h1>
+      <a href="index.html" class="text-white hover:underline"> Home </a>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+    <h2 class="text-2xl font-semibold text-gray-800">Available Staycation Rooms</h2>
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <label for="sort" class="text-gray-700 font-medium">Sort by:</label>
+        <select id="sort" class="border rounded px-3 py-1">
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="location_asc">Location: A to Z</option>
+          <option value="location_desc">Location: Z to A</option>
+          <option value="capacity_asc">Capacity: Low to High</option>
+          <option value="capacity_desc">Capacity: High to Low</option>
+        </select>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <label for="filterLocation" class="text-gray-700 font-medium">Filter by Location:</label>
+        <select id="filterLocation" class="border rounded px-3 py-1">
+          <option value="">All locations</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="roomList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+    <div class="flex justify-center mt-6">
+      <button id="prevPage" class="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-300" disabled>Previous</button>
+      <span id="pageInfo" class="mx-4 text-gray-700"></span>
+      <button id="nextPage" class="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-300" disabled>Next</button>
+    </div>
+
+    <!-- View Room Modal -->
+    <div id="viewRoomModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b">
+          <h3 id="viewRoomTitle" class="text-xl font-semibold"></h3>
+          <button id="closeViewRoomModal" class="text-gray-600 hover:text-gray-900">&times;</button>
+        </div>
+        <img id="viewRoomImage" class="w-full h-64 object-cover" alt="Room Image" />
+        <div class="p-4 space-y-2">
+          <p id="viewRoomLocation" class="text-gray-700"></p>
+          <p id="viewRoomPrice" class="text-gray-700 font-semibold"></p>
+          <p id="viewRoomCapacity" class="text-gray-700"></p>
+          <p id="viewRoomDescription" class="text-gray-700"></p>
+          <div id="viewRoomReviews" class="space-y-2"></div>
+          <button id="bookRoomBtn" class="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Book Now</button>
+        </div>
+      </div>
+    </div>
+
+  <script>
+    let rooms = [];
+    let filteredRooms = [];
+    let currentPage = 1;
+    const roomsPerPage = 6;
+
+    async function fetchRooms() {
+      const res = await fetch('api/get_rooms.php');
+      const data = await res.json();
+
+      if (data.success && data.rooms.length > 0) {
+        rooms = data.rooms;
+        populateFilterLocations();
+        applyFiltersAndSorting();
+      } else {
+        document.getElementById('roomList').innerHTML = `<p class="text-gray-600">No rooms found.</p>`;
+      }
+    }
+
+    function populateFilterLocations() {
+      const locations = [...new Set(rooms.map(room => room.location))];
+      const filterLocation = document.getElementById('filterLocation');
+      filterLocation.innerHTML = '<option value="">All locations</option>';
+      locations.forEach(loc => {
+        const option = document.createElement('option');
+        option.value = loc;
+        option.textContent = loc;
+        filterLocation.appendChild(option);
+      });
+    }
+
+    function applyFiltersAndSorting() {
+      const sortValue = document.getElementById('sort').value;
+      const filterLocation = document.getElementById('filterLocation').value;
+
+      filteredRooms = rooms.filter(room => {
+        return filterLocation === '' || room.location === filterLocation;
+      });
+
+      switch (sortValue) {
+        case 'price_asc':
+          filteredRooms.sort((a, b) => a.price - b.price);
+          break;
+        case 'price_desc':
+          filteredRooms.sort((a, b) => b.price - a.price);
+          break;
+        case 'location_asc':
+          filteredRooms.sort((a, b) => a.location.localeCompare(b.location));
+          break;
+        case 'location_desc':
+          filteredRooms.sort((a, b) => b.location.localeCompare(a.location));
+          break;
+        case 'capacity_asc':
+          filteredRooms.sort((a, b) => a.capacity - b.capacity);
+          break;
+        case 'capacity_desc':
+          filteredRooms.sort((a, b) => b.capacity - a.capacity);
+          break;
+      }
+
+      currentPage = 1;
+      renderRooms();
+      updatePaginationButtons();
+    }
+
+    function renderRooms() {
+      const roomList = document.getElementById('roomList');
+      roomList.innerHTML = '';
+
+      if (filteredRooms.length === 0) {
+        roomList.innerHTML = `<p class="text-gray-600">No rooms found.</p>`;
+        return;
+      }
+
+      const start = (currentPage - 1) * roomsPerPage;
+      const end = start + roomsPerPage;
+      const roomsToShow = filteredRooms.slice(start, end);
+
+      roomsToShow.forEach(room => {
+        const div = document.createElement('div');
+        div.className = "bg-white rounded shadow p-4 flex flex-col";
+
+        const imagePath = room.image ? `uploads/${room.image}` : 'https://via.placeholder.com/300x200';
+
+        div.innerHTML = `
+          <img src="${imagePath}" alt="Room Image" class="w-full h-48 object-cover rounded mb-3">
+          <h3 class="text-lg font-bold">${room.title}</h3>
+          <p class="text-sm text-gray-600 mb-1">Location: ${room.location}</p>
+          <p class="text-sm text-gray-600 mb-1">Capacity: ${room.capacity}</p>
+          <p class="text-sm text-gray-600 mb-2">Price: ₱${room.price} / night</p>
+          <div class="mt-auto flex justify-between items-center">
+            <button class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" onclick="openViewRoomModal(${room.id})">View Room</button>
+            <button class="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500" onclick="toggleFavorite(${room.id})" id="fav-btn-${room.id}">♡ Favorite</button>
+          </div>
+        `;
+
+        roomList.appendChild(div);
+      });
+    }
+
+    function updatePaginationButtons() {
+      const totalPages = Math.ceil(filteredRooms.length / roomsPerPage);
+      document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+      document.getElementById('prevPage').disabled = currentPage === 1;
+      document.getElementById('nextPage').disabled = currentPage === totalPages;
+    }
+
+    document.getElementById('sort').addEventListener('change', () => {
+      applyFiltersAndSorting();
+    });
+
+    document.getElementById('filterLocation').addEventListener('change', () => {
+      applyFiltersAndSorting();
+    });
+
+    document.getElementById('prevPage').addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderRooms();
+        updatePaginationButtons();
+      }
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredRooms.length / roomsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderRooms();
+        updatePaginationButtons();
+      }
+    });
+
+    function openViewRoomModal(roomId) {
+      const room = rooms.find(r => r.id === roomId);
+      if (!room) return;
+
+      document.getElementById('viewRoomTitle').textContent = room.title;
+      document.getElementById('viewRoomImage').src = room.image ? `uploads/${room.image}` : 'https://via.placeholder.com/600x400';
+      document.getElementById('viewRoomLocation').textContent = `Location: ${room.location}`;
+      document.getElementById('viewRoomPrice').textContent = `Price: ₱${room.price} / night`;
+      document.getElementById('viewRoomCapacity').textContent = `Capacity: ${room.capacity}`;
+      document.getElementById('viewRoomDescription').textContent = room.description || 'No description available.';
+      // TODO: Add reviews display here
+
+      document.getElementById('viewRoomModal').classList.remove('hidden');
+    }
+
+    document.getElementById('closeViewRoomModal').addEventListener('click', () => {
+      document.getElementById('viewRoomModal').classList.add('hidden');
+    });
+
+    function toggleFavorite(roomId) {
+      // TODO: Implement favorite toggle logic with backend API
+      const btn = document.getElementById(`fav-btn-${roomId}`);
+      if (btn.textContent.includes('♡')) {
+        btn.textContent = '♥ Favorited';
+        btn.classList.remove('bg-yellow-400');
+        btn.classList.add('bg-red-500');
+      } else {
+        btn.textContent = '♡ Favorite';
+        btn.classList.remove('bg-red-500');
+        btn.classList.add('bg-yellow-400');
+      }
+    }
+
+    fetchRooms();
+  </script>
+</body>
+</html>
